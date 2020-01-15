@@ -18,13 +18,19 @@ fi
 [ -d "$JAVA_HOME" ] || JAVA_HOME=/etc/alternatives/java_sdk
 [ -d "$JAVA_HOME" ] || (echo "JAVA_HOME directory at '$JAVA_HOME' does not exist." && false)
 
+if [ -f "$JAVA_HOME/lib/tools.jar" ]; then
+    JAVA_CLASSPATH="-cp $JAVA_HOME/lib/tools.jar"
+else
+    JAVA_CLASSPATH="--add-modules jdk.attach"
+fi
+
 sudo rm $PERF_MAP_FILE -f
 
 # copy libperfmap.so to container
 sudo cp -n $PERF_MAP_DIR/out/libperfmap.so /proc/$PID/root/tmp
 
 # Attach and run libperfmap
-sudo java -cp $ATTACH_JAR_PATH:$JAVA_HOME/lib/tools.jar net.virtualvoid.perf.AttachOnce $PID "$OPTIONS"
+sudo java $JAVA_CLASSPATH -jar $ATTACH_JAR_PATH $PID "$OPTIONS"
 
 # Copy over perf map file from container
 sudo cp /proc/$PID/root/tmp/perf-$CONTAINER_PID.map $PERF_MAP_FILE
